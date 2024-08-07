@@ -1,10 +1,10 @@
 from longchain.core.agentaction import AgentAction
-from longchain.core.dataclasses import PathResult
+from longchain.core.dataclasses import NextAction, PathResult
 
 
 class ChangePathAction(AgentAction):
-    async def __init__(self, dest: str) -> None:
-        self.next_action = "player"
+    def __init__(self, dest: str, next_action: NextAction = 'player') -> None:
+        self.next_action = next_action
         self.dest = dest
         
     async def run(self, path, player, player_actions):

@@ -27,26 +27,26 @@ class JsonFileDatastore(Datastore):
             print(f"Error reading JSON from {os.path.abspath(self.path)}")
             raise            
         
-    def save_player(self, player):
+    async def save_player(self, player):
         # remove the player if it already exists
-        self.remove_player(player.id)
+        await self.remove_player(player.id)
         self.players.append(player)
         with open(self.path, 'w') as f:
-            f.write(json.dumps([player.__dict__ for player in self.players]))
+            f.write(json.dumps([player.__dict__ for player in self.players], indent=4))
 
-    def get_player_by_id(self, player_id):
+    async def get_player_by_id(self, player_id):
         for player in self.players:
             if player.id == player_id:
                 return player
         return None
 
-    def get_player_by_interaction_id(self, interaction_id):
+    async def get_player_by_interaction_id(self, interaction_id):
         for player in self.players:
             if player.interaction_id == interaction_id:
                 return player
         return None
 
-    def remove_player(self, player_id):
+    async def remove_player(self, player_id):
         self.players = [player for player in self.players if player.id != player_id]
         with open(self.path, 'w') as f:
-            f.write(json.dumps([player.__dict__ for player in self.players]))
+            f.write(json.dumps([player.__dict__ for player in self.players], indent=4)) 

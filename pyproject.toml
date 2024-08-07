@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name="longchain"
-version = "0.1.0"
+version = "0.2.0"
 description="A framework for LLM-powered interactions"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -16,3 +16,6 @@ classifiers = [
 dependencies = [
 
 ]
+
+[project.optional-dependencies]
+slack = ["slack_bolt", "slack_sdk", "aiohttp"]

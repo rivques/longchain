@@ -35,7 +35,6 @@ quest = Quest(
                 system_prompt="example prompt",
                 use_history_from=["bandit_encounter_llm"],
                 clear_history_on_end=True,
-                endable_paths=[EndablePath(path_id="travelling_there_2", scenario="When the bandits leave, either because the player defeated them or because they're done stealing or because the player scares them off")], # Resolvable<EndablePath[]>
                 agent_actions=[
                     LlmTool(
                         name="take_gold",
@@ -49,7 +48,15 @@ quest = Quest(
                                 max=100
                             )
                         ],
-                        available=lambda ctx: ctx.player.gold > 0 and ctx.times_called < 1,
+                        available=lambda ctx: bag.get_stake(player).gold > 0 and ctx.times_this_called < 1,
+                        func=lambda ctx: LlmToolResult(action=bag.TakeItemAction(item="gp", num=ctx.params["num_gold"]), description=f"The bandits take {ctx.params['num_gold']} gold from you", reprompt=True)
+                    ),
+                    LlmTool(
+                        name="end_bandit_encounter",
+                        description="End the bandit encounter. Call when the bandits leave, either because the player defeated them, because they're done stealing, or because the player scares them off",
+                        params=[],
+                        available= ctx.num_actions_taken > 2,
+                        action=lambda ctx: LlmToolResult(action=EndAction(dest="travelling_there_2"), description="The bandits leave", reprompt=False)
                     )
                 ]
             )

@@ -1,2 +1,2 @@
-longchain[slack]
-dotenv
+#longchain[slack]
+python-dotenv

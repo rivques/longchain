@@ -1,21 +1,23 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 
-from longchain.core.dataclasses import Player
+if TYPE_CHECKING: # only import classes used for typing when type checking, to avoid a circular dependency
+    from longchain.core.dataclasses import Player
 
 class Datastore(ABC):
     @abstractmethod
-    def get_player_by_id(self, player_id: Any) -> Optional[Player]:
+    async def get_player_by_id(self, player_id: Any) -> Optional[Player]:
         pass
     
     @abstractmethod
-    def get_player_by_interaction_id(self, interaction_id: Any) -> Optional[Player]:
+    async def get_player_by_interaction_id(self, interaction_id: Any) -> Optional[Player]:
         pass
 
     @abstractmethod
-    def remove_player(self, player_id: Any):
+    async def remove_player(self, player_id: Any):
         pass
 
     @abstractmethod
-    def save_player(self, player: Player):
+    async def save_player(self, player: Player):
         pass

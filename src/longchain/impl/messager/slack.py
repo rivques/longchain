@@ -19,13 +19,13 @@ class SlackMessager(Messager):
         self.active_channel = active_channel
         self.reset_user_command = reset_user_command
         self.admins = admins
+        self.app_token = app_token
         self.app = AsyncApp(token=bot_token)
-        self.handler = AsyncSocketModeHandler(app=self.app, app_token=app_token)
         self.workspace_name = workspace_name
 
     async def send_messages(self, messages):
         for i, message in enumerate(messages):
-            player = self.datastore.get_player_by_interaction_id(message.interaction_id)
+            player = await self.datastore.get_player_by_interaction_id(message.interaction_id)
             if player is None:
                 print(f"ERROR: Player not found for message {message.interaction_id}")
                 # this should be unreachable, but just in case
@@ -52,15 +52,16 @@ class SlackMessager(Messager):
             await self.app.client.chat_postMessage(channel=player.messager_state["channel"], text=message.text, thread_ts=message.interaction_id, username=message.name, icon_url=message.icon, blocks=blocks)
 
     async def handle_thread_message(self, client, body, tick: Callable[[Player, Sequence[PlayerAction]], Awaitable[None]]):
-        player = self.datastore.get_player_by_interaction_id(body["event"]["thread_ts"])
+        player = await self.datastore.get_player_by_interaction_id(body["event"]["thread_ts"])
         if player is None:
             # this thread is not a game thread, ignore it
             return
         if player.id != body["event"]["user"]:
             await client.chat_postEphemeral(channel=body["event"]["channel"], thread_ts=body["event"]["thread_ts"], user=body["event"]["user"], text=f"Hey, you're not <@{player.id}>! You're being ignored, you hear me? Ignored!")
             return
-        if player.messager_state["last_unprocessed_message"] < float(body["event"]["ts"]) or player.messager_state["last_processed_message"] is not None and player.messager_state["last_processed_message"] < float(body["event"]["ts"]):
+        if player.messager_state["last_unprocessed_message"] is not None and (player.messager_state["last_unprocessed_message"] < float(body["event"]["ts"]) or (player.messager_state["last_processed_message"] is not None and player.messager_state["last_processed_message"] < float(body["event"]["ts"]))):
             # okay that logic is a bit of a doozy but:
+            # if last_unprocessed_message is None, then this is the first message and we're fine
             # if the last unprocessed message is older than this one, then we're still processing the last one
             # or, if the last processed message is older than this one, then we're still processing another one
             # in either case, we should ignore this message
@@ -70,6 +71,7 @@ class SlackMessager(Messager):
                 # this counts as processing the message, so update the last processed message time if it's newer
                 player.messager_state["last_processed_message"] = float(body["event"]["ts"])
             return
+        await client.reactions_add(channel=body["event"]["channel"], name="loading-dots", timestamp=body["event"]["ts"])
         player.messager_state["last_unprocessed_message"] = float(body["event"]["ts"])
         # okay by this point we should be good to actually process the message
         # with the gurantees that this player is real, the plaayer is the one who sent
@@ -78,22 +80,36 @@ class SlackMessager(Messager):
         # for now, we'll just assume the player is sending a message
         # TODO: support buttons, somehow
         player_actions = [PlayerAction(name="say", data={"message": body["event"]["text"]})]
-        # finally, tick the quest
-        await tick(player, player_actions)
+        # tick the quest
+        try:
+            await tick(player, player_actions)
+        except Exception as e:
+            await client.reactions_add(channel=body["event"]["channel"], name="tw_no_entry_sign", timestamp=body["event"]["ts"])
+            raise
+        else:
+            await client.reactions_add(channel=body["event"]["channel"], name="tw_white_check_mark", timestamp=body["event"]["ts"])
+        finally:
+            await client.reactions_remove(channel=body["event"]["channel"], name="loading-dots", timestamp=body["event"]["ts"])
+            # update the message processing state
+            player.messager_state["last_processed_message"] = float(body["event"]["ts"])
+            player.messager_state["last_unprocessed_message"] = None
+            await self.datastore.save_player(player)
         
     async def start(self, tick, start_interaction) -> Never:
+        self.handler = AsyncSocketModeHandler(app=self.app, app_token=self.app_token)
         @self.app.event("app_mention")
         async def handle_app_mention(client, body, say, ack):
             await ack()
             if "thread_ts" in body["event"]:
                 pass # we were pinged in a thread, the other handler'll catch it
             elif body["event"]["channel"] == self.active_channel:
-                player = self.datastore.get_player_by_id(body["event"]["user"])
+                player = await self.datastore.get_player_by_id(body["event"]["user"])
                 if player is not None:
                     await client.chat_postEphemeral(channel=body["event"]["channel"], user=body["event"]["user"], text=f"You're already in a conversation with me. Please continue that conversation <https://{self.workspace_name}.slack.com/archives/{self.active_channel}/p{str(player.interaction_id).replace('.','')}|here>.")
                     return
                 player_name = await client.users_info(user=body["event"]["user"])
                 player = Player(id=body["event"]["user"], current_path=self.start_path, name=player_name["user"]["profile"]["display_name"], interaction_id=body["event"]["ts"], path_states={}, messager_state={"channel": body["event"]["channel"], "last_unprocessed_message": None, "last_processed_message": float(body["event"]["ts"])})
+                await self.datastore.save_player(player)
                 await start_interaction(player)
             else:
                 await say(f"I can't speak here. Try pinging me in <#{self.active_channel}>.")
@@ -115,12 +131,12 @@ class SlackMessager(Messager):
             
             user_id_to_reset = mo.group(1)
             
-            player = self.datastore.get_player_by_id(user_id_to_reset)
+            player = await self.datastore.get_player_by_id(user_id_to_reset)
             if player is None:
                 await respond(f"Player not found. Why are you running this command?", response_type="ephemeral")
                 return
             
-            self.datastore.remove_player(user_id_to_reset)
+            await self.datastore.remove_player(user_id_to_reset)
             print(f"Player {user_id_to_reset} reset.")
             await respond(f"Player <@{player.id}> reset.", response_type="ephemeral")
         

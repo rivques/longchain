@@ -1,6 +1,6 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 
 
 @dataclass
@@ -16,7 +16,7 @@ class PathResult:
     next_action: NextAction
     new_path_id: Optional[str]
     messages: Sequence[Message]
-    is_error: bool = False
+    error: Optional[Exception] = None
 
 @dataclass
 class Player:
@@ -24,7 +24,7 @@ class Player:
     current_path: str
     name: str
     interaction_id: str
-    path_states: Mapping[str, dict]
+    path_states: dict[str, dict]
     messager_state: dict
 
 @dataclass

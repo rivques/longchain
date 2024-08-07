@@ -1,8 +1,10 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Sequence, Callable, Awaitable
-from typing import Never
+from typing import Never, TYPE_CHECKING
 
-from longchain.core.dataclasses import Message, Player, PlayerAction
+if TYPE_CHECKING: # only import classes used for typing when type checking, to avoid a circular dependency
+    from longchain.core.dataclasses import Message, Player, PlayerAction
 
 class Messager(ABC):
     @abstractmethod
