@@ -19,16 +19,19 @@ class Quest:
         ready_to_end = False
         messages: list[Message] = []
         error: Optional[Exception] = None
+        remove_this_player = False
         while not ready_to_end: # loop until a path asks for a player action
             current_path = self.paths[player.current_path] # get the path the player is on
             path_result: PathResult = await current_path.tick(player, player_actions) # run that path
+            print(f"got path result: {path_result}")
             messages.extend(path_result.messages) # add any messages it generated to the queue
             if path_result.error: # if the path errored, add the error to the queue and stop
                 messages.append(Message(text=f"An error occurred while running path {current_path.id}: {path_result.error}", interaction_id=player.interaction_id))
                 ready_to_end = True
                 error = path_result.error
                 break
-            ready_to_end = path_result.next_action == 'player' # if the path asks for a player action, we're done
+            ready_to_end = path_result.next_action == 'player' or path_result.remove_this_player # if the path asks for a player action, we're done
+            remove_this_player |= path_result.remove_this_player
             if path_result.new_path_id: # if the path changed:
                 print(f"{player.name} is switching from {player.current_path} to {path_result.new_path_id}. new path starts without player action: {self.paths[path_result.new_path_id].starts_without_player_action}. path wants agent action: {not ready_to_end}")
                 # check that the new path exists
@@ -40,10 +43,13 @@ class Quest:
                 if not self.paths[player.current_path].starts_without_player_action:
                     # this path needs a player action to start, so we don't care if the previous path asked for anther agent turn
                     ready_to_end = True
-        await self.messager.send_messages(messages)
+        
+        await self.messager.send_messages(messages, do_send_message_hint=not remove_this_player) # TODO: add a flag to the path result to indicate that the player should not be prompted to send a message
         if error:
             raise error
         await self.datastore.save_player(player)
+        if remove_this_player:
+            await self.datastore.remove_player(player.id)
     
     async def start_interaction(self, player: Player):
         player.current_path = self.first_path

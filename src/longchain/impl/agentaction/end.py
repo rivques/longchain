@@ -9,3 +9,7 @@ class ChangePathAction(AgentAction):
         
     async def run(self, path, player, player_actions):
         return PathResult(next_action=self.next_action, new_path_id=self.dest, messages=[])
+
+class RemovePlayerAction(AgentAction):
+    async def run(self, path, player, player_actions):
+        return PathResult(next_action='player', new_path_id=None, messages=[], remove_this_player=True)

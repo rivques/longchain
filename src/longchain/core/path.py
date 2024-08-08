@@ -9,12 +9,21 @@ class Path:
         self.action_resolver = action_resolver
 
     async def tick(self, player: Player, player_actions: Sequence[PlayerAction]) -> PathResult:
+        result = PathResult(next_action='player', new_path_id=None, messages=[])
         try:
-            action = await self.action_resolver.tick(player, player_actions)
+            actions = await self.action_resolver.tick(player, player_actions)
         except Exception as e:
             return PathResult(error=e, next_action='player', new_path_id=None, messages=[Message(text=f"An error occurred while attempting to get an action with {self.action_resolver.__class__.__name__}: {e}", interaction_id=player.interaction_id)])
-        try:
-            path_result = await action.run(self, player, player_actions)
-        except Exception as e:
-            return PathResult(error=e, next_action='player', new_path_id=None, messages=[Message(text=f"An error occurred while attempting to run a(n) {action.__class__.__name__}: {e}", interaction_id=player.interaction_id)])
-        return path_result
+        for action in actions:
+            try:
+                path_result = await action.run(self, player, player_actions)
+            except Exception as e:
+                return PathResult(error=e, next_action='player', new_path_id=None, messages=[Message(text=f"An error occurred while attempting to run a(n) {action.__class__.__name__}: {e}", interaction_id=player.interaction_id)])
+            if path_result.error:
+                return path_result
+            result.messages.extend(path_result.messages)
+            result.next_action = path_result.next_action
+            result.remove_this_player |= path_result.remove_this_player
+            if path_result.new_path_id is not None:
+                result.new_path_id = path_result.new_path_id
+        return result

@@ -23,7 +23,7 @@ class SlackMessager(Messager):
         self.app = AsyncApp(token=bot_token)
         self.workspace_name = workspace_name
 
-    async def send_messages(self, messages):
+    async def send_messages(self, messages, do_send_message_hint):
         for i, message in enumerate(messages):
             player = await self.datastore.get_player_by_interaction_id(message.interaction_id)
             if player is None:
@@ -39,7 +39,7 @@ class SlackMessager(Messager):
                     }
                 }
             ]
-            if i == len(messages) - 1:
+            if i == len(messages) - 1 and do_send_message_hint:
                 blocks.append({
                     "type": "context",
                     "elements": [
@@ -93,7 +93,9 @@ class SlackMessager(Messager):
             # update the message processing state
             player.messager_state["last_processed_message"] = float(body["event"]["ts"])
             player.messager_state["last_unprocessed_message"] = None
-            await self.datastore.save_player(player)
+            if await self.datastore.get_player_by_id(player.id) is not None:
+                # make sure the player wasn't deleted out from under us
+                await self.datastore.save_player(player)
         
     async def start(self, tick, start_interaction) -> Never:
         self.handler = AsyncSocketModeHandler(app=self.app, app_token=self.app_token)
@@ -108,7 +110,7 @@ class SlackMessager(Messager):
                     await client.chat_postEphemeral(channel=body["event"]["channel"], user=body["event"]["user"], text=f"You're already in a conversation with me. Please continue that conversation <https://{self.workspace_name}.slack.com/archives/{self.active_channel}/p{str(player.interaction_id).replace('.','')}|here>.")
                     return
                 player_name = await client.users_info(user=body["event"]["user"])
-                player = Player(id=body["event"]["user"], current_path=self.start_path, name=player_name["user"]["profile"]["display_name"], interaction_id=body["event"]["ts"], path_states={}, messager_state={"channel": body["event"]["channel"], "last_unprocessed_message": None, "last_processed_message": float(body["event"]["ts"])})
+                player = Player(id=body["event"]["user"], current_path=self.start_path, name=player_name["user"]["profile"]["display_name"], interaction_id=body["event"]["ts"], path_states={}, messager_state={"channel": body["event"]["channel"], "last_unprocessed_message": None, "last_processed_message": float(body["event"]["ts"])}, plugin_state={})
                 await self.datastore.save_player(player)
                 await start_interaction(player)
             else:

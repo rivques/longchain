@@ -8,7 +8,7 @@ if TYPE_CHECKING: # only import classes used for typing when type checking, to a
 
 class Messager(ABC):
     @abstractmethod
-    async def send_messages(self, messages: Sequence[Message]):
+    async def send_messages(self, messages: Sequence[Message], do_send_message_hint: bool):
         pass
     @abstractmethod
     async def start(self, tick: Callable[[Player, Sequence[PlayerAction]], Awaitable[None]], start_interaction: Callable[[Player], Awaitable[None]]) -> Never:

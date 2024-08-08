@@ -15,8 +15,9 @@ NextAction = Literal['player', 'path']
 class PathResult:
     next_action: NextAction
     new_path_id: Optional[str]
-    messages: Sequence[Message]
+    messages: list[Message]
     error: Optional[Exception] = None
+    remove_this_player: bool = False
 
 @dataclass
 class Player:
@@ -26,6 +27,7 @@ class Player:
     interaction_id: str
     path_states: dict[str, dict]
     messager_state: dict
+    plugin_state: dict[str, dict]
 
 @dataclass
 class PlayerAction:

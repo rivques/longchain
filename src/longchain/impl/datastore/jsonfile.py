@@ -49,4 +49,5 @@ class JsonFileDatastore(Datastore):
     async def remove_player(self, player_id):
         self.players = [player for player in self.players if player.id != player_id]
         with open(self.path, 'w') as f:
-            f.write(json.dumps([player.__dict__ for player in self.players], indent=4)) 
+            to_write = json.dumps([player.__dict__ for player in self.players], indent=4)
+            f.write(to_write)

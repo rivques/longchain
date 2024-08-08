@@ -7,7 +7,7 @@ if TYPE_CHECKING: # only import classes used for typing when type checking, to a
 
 class Datastore(ABC):
     @abstractmethod
-    async def get_player_by_id(self, player_id: Any) -> Optional[Player]:
+    async def get_player_by_id(self, player_id: str) -> Optional[Player]:
         pass
     
     @abstractmethod
@@ -15,7 +15,7 @@ class Datastore(ABC):
         pass
 
     @abstractmethod
-    async def remove_player(self, player_id: Any):
+    async def remove_player(self, player_id: str):
         pass
 
     @abstractmethod

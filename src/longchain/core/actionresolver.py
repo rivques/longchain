@@ -10,5 +10,5 @@ if TYPE_CHECKING: # only import classes used for typing when type checking, to a
 
 class ActionResolver(ABC):
     @abstractmethod
-    async def tick(self, player: Player, player_actions: Sequence[PlayerAction]) -> AgentAction:
+    async def tick(self, player: Player, player_actions: Sequence[PlayerAction]) -> list[AgentAction]:
         pass

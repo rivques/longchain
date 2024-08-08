@@ -4,10 +4,11 @@ from longchain.core.dataclasses import Message
 from longchain.core.path import Path
 from longchain.core.quest import Quest
 from longchain.impl.actionresolver.sequential import SequentialActionResolver
-from longchain.impl.agentaction.end import ChangePathAction
+from longchain.impl.agentaction.end import ChangePathAction, RemovePlayerAction
 from longchain.impl.agentaction.message import MessageAgentAction
 from longchain.impl.datastore.jsonfile import JsonFileDatastore
 from longchain.impl.messager.slack import SlackMessager
+from longchain.impl.actionresolver.llm import LlmTool, LlmToolParam, LlmToolResult, OpenAIActionResolver
 import os
 
 if "ENVIRONMENT" not in os.environ or os.environ["ENVIRONMENT"] != "production":
@@ -34,16 +35,37 @@ quest = Quest(
         Path(
             id="stocking_initial",
             starts_without_player_action=False,
-            action_resolver=SequentialActionResolver(
-                MessageAgentAction("The figure is trying to steal a sock!", name="Initial", icon_url="https://example.com/icon.png"),
-                ChangePathAction("completed", next_action='agent')
+            action_resolver=OpenAIActionResolver(
+                openai_token=os.environ["OPENAI_API_KEY"],
+                openai_base_url=os.environ["OPENAI_API_URL"],
+                model="gpt-4o-mini",
+                system_prompt="You are a game master for an RPG. Right now the player is in a town square. A cloaked figure, Agent Stocking, has approached them. Agent Stocking is a spy, but someone has stolen his lucky socks! Without them, he cannot be stealthy. He needs to convince the player to go find his socks!",
+                name="Cloaked Figure",
+                agent_actions=[
+                    LlmTool(
+                        name="end_interaction",
+                        description="Call this tool either once the player has agreed to help Agent Stocking or if the player refuses multiple times to help. When you call this, also wish the player good luck",
+                        params=[LlmToolParam(name="player_response", schema={
+                            "type": "string",
+                            "description": "Whether the player agreed to help or not",
+                            "enum": ["agree", "refuse"]
+                        })],
+                        strict=True,
+                        available=lambda ctx: True,
+                        action=lambda ctx, params: LlmToolResult(
+                            agent_actions=[ChangePathAction("completed", next_action="path")],
+                            model_feedback=f"The player has {params['player_response']}d to help Agent Stocking."
+                        )
+                    )
+                ]
             )
         ),
         Path(
             starts_without_player_action=True,
             id="completed",
             action_resolver=SequentialActionResolver(
-                MessageAgentAction("You have completed the quest!", name="Completed", icon_url="https://example.com/icon.png"),
+                MessageAgentAction(f"You have completed the quest! You can try again by pinging <@{os.environ['BOT_USER_ID']}> in <#{os.environ['HOME_CHANNEL_ID']}>.", name="Completed", icon_url="https://example.com/icon.png"),
+                RemovePlayerAction()
             )
         )
     ],
