@@ -1,0 +1,577 @@
+syntax = "proto3";
+
+package bag;
+
+service BagService {
+  rpc CreateApp(CreateAppRequest) returns (CreateAppResponse) {}  // Should be able to create apps as an admin
+  rpc CreateInstances(CreateInstancesRequest) returns (CreateInstancesResponse) {}  // Should be able to create and assign multiple instances, depending on permissions
+  rpc CreateInstance(CreateInstanceRequest) returns (CreateInstanceResponse) {}  // Should be able to create and assign instances, depending on permissions
+  rpc CreateItem(CreateItemRequest) returns (CreateItemResponse) {}  // Should be able to create items, depending on permissions
+  rpc CreateRecipe(CreateRecipeRequest) returns (CreateRecipeResponse) {}  // Should be able to create recipes that include items the app has access to
+  rpc CreateAction(CreateActionRequest) returns (CreateActionResponse) {}
+  rpc CreateTrade(CreateTradeRequest) returns (CreateTradeResponse) {}  // Should be able to initiate trades that include items
+  rpc GetIdentities(GetIdentitiesRequest) returns (GetIdentitiesResponse) {}
+  rpc GetIdentity(GetIdentityRequest) returns (GetIdentityResponse) {}  // Should be able to Get info about a Slack user
+  rpc GetInventory(GetInventoryRequest) returns (GetInventoryResponse) {}  // Should be able to Get inventory of a user, including access to private items the app has access to
+  rpc GetItem(GetItemRequest) returns (GetItemResponse) {}  // Should be able to Get item info, including access to private items the app has access to
+  rpc GetItems(GetItemsRequest) returns (GetItemsResponse) {}
+  rpc GetInstance(GetInstanceRequest) returns (GetInstanceResponse) {}  // Should be able to Get instances
+  rpc GetApp(GetAppRequest) returns (GetAppResponse) {}  // Should be able to Get other public apps, as well as itself
+  rpc GetTrade(GetTradeRequest) returns (GetTradeResponse) {} // Should be able to Get public trades as well as trades the app has initiated
+  rpc GetTrades(GetTradesRequest) returns (GetTradesResponse) {} 
+  rpc GetRecipes(GetRecipesRequest) returns (GetRecipesResponse) {}
+  rpc GetRecipe(GetRecipeRequest) returns (GetRecipeResponse) {}  // Should be able to Get recipes that include items the app has access to
+  rpc GetAction(GetActionRequest) returns (GetActionResponse) {}
+  rpc UpdateIdentityMetadata(UpdateIdentityMetadataRequest) returns (UpdateIdentityMetadataResponse) {}  // Only things apps should be able to update - metadata 
+  rpc UpdateInstance(UpdateInstanceRequest) returns (UpdateInstanceResponse) {}  // Should be able to update instances that are instances of items the app has access to
+  rpc UpdateItem(UpdateItemRequest) returns (UpdateItemResponse) {}  // Should be able to update items the app has access to
+  rpc UpdateApp(UpdateAppRequest) returns (UpdateAppResponse) {}  // Should be able to update own data
+  rpc UpdateTrade(UpdateTradeRequest) returns (UpdateTradeResponse) {}  // Should be able to update trades the app has access to
+  rpc UpdateRecipe (UpdateRecipeRequest) returns (UpdateRecipeResponse) {} // Should be able to update recipes the app has access to
+  rpc UpdateAction (UpdateActionRequest) returns (UpdateActionResponse) {}
+  rpc DeleteApp(DeleteAppRequest) returns (DeleteAppResponse) {} // Should be able to delete apps as a admin
+  rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse) {}  // Should be able to delete instances that the app has access to
+  rpc DeleteTrade(DeleteTradeRequest) returns (DeleteTradeResponse) {}
+  rpc CloseTrade(CloseTradeRequest) returns (CloseTradeResponse) {} // Should be able to close instances that the app has access to
+  rpc VerifyKey(VerifyKeyRequest) returns (VerifyKeyResponse) {}
+  rpc RunGive(RunGiveRequest) returns (RunGiveResponse) {}
+  rpc RunCraft(RunCraftRequest) returns (RunCraftResponse) {}
+  rpc GetCraftStatus(GetCraftStatusRequest) returns (GetCraftStatusResponse) {}
+  rpc MakeOffer(MakeOfferRequest) returns (MakeOfferResponse) {}
+}
+
+message App {
+  optional int32 id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional string permissions = 4;
+  optional bool public = 5;
+  optional string metadata = 6;
+}
+
+message Item {
+  optional string name = 1;
+  optional string image = 2;
+  optional string description = 3;
+  optional string reaction = 4;
+  optional bool commodity = 5;
+  optional bool tradable = 6;
+  optional bool public = 7;
+  optional string metadata = 8;
+}
+
+message Skill {
+  optional string name = 1;
+  optional int32 maxLevel = 2;
+  optional string description = 3;
+  optional string reaction = 4;
+  optional string metadata = 5;
+}
+
+message Identity {
+  optional string slack = 1;
+  repeated Instance inventory = 2;
+  optional string metadata = 3;
+}
+
+message Instance {
+  optional int32 id = 1;
+  optional string itemId = 2;
+  optional string identityId = 3;
+  optional int32 quantity = 4;
+  optional string metadata = 5;
+  optional Item item = 6;
+}
+
+message SkillInstance {
+  optional int32 id = 1;
+  optional string skillId = 2;
+  optional string identityId = 3;
+  optional int32 level = 4;
+  optional string metadata = 5;
+  optional Skill skill = 6;
+}
+
+message Trade {
+  optional int32 id = 1;
+  optional string initiatorIdentityId = 2;
+  optional string receiverIdentityId = 3;
+  repeated TradeInstance initiatorTrades = 4;
+  repeated TradeInstance receiverTrades = 5;
+  optional bool public = 6;
+  optional bool closed = 7;
+}
+
+message TradeInstance {
+  optional int32 id = 1;
+  optional int32 instanceId = 2;
+  optional Instance instance = 3;
+  optional int32 quantity = 4;
+}
+
+message RecipeItem {
+  optional int32 id = 1;
+  optional string recipeItemId = 2;
+  optional Item recipeItem = 3;
+  optional int32 quantity = 4;
+}
+
+message Recipe {
+  optional int32 id = 1;
+  repeated RecipeItem inputs = 2; 
+  repeated RecipeItem outputs = 3;
+  repeated RecipeItem tools = 4;
+  repeated Skill skills = 5;
+  optional bool public = 6;
+  optional string description = 7;
+  optional int32 time = 8;
+}
+
+message Action {
+  optional int32 id = 1;
+  repeated string locations = 2;
+  repeated string tools = 3;
+  optional string branch = 4;
+}
+
+message ActionInstance {
+  optional int32 id = 1;
+  optional bool done = 2;
+  optional string identityId = 3;
+  optional Identity identity = 4;
+  optional int32 actionId = 5;
+  optional Action action = 6;
+}
+
+message OfferItem {
+  optional string itemName = 1;
+  optional int32 quantity = 2;
+}
+
+message CreateInstancesRequest {
+  int32 appId = 1;
+  string key = 2;
+  repeated Instance instances = 3;
+  string identityId = 4;
+  optional bool show = 5;
+  optional string note = 6;
+}
+
+message CreateInstancesResponse {
+  optional string response = 1;
+  repeated Instance instances = 2;
+}
+
+message CreateInstanceRequest {
+  int32 appId = 1;
+  string key = 2;
+  string itemId = 3;
+  string identityId = 4;
+  int32 quantity = 5;
+  optional string metadata = 6;
+  optional bool public = 7;
+  optional bool show = 8;
+  optional string note = 9;
+}
+
+message CreateInstanceResponse {
+  optional string response = 1;
+  optional Instance instance = 2;
+}
+
+message CreateAppRequest {
+  int32 appId = 1;
+  string key = 2;
+  string name = 3;
+  optional string description = 4;
+  optional int32 permissions = 5;
+  optional bool public = 6;
+  optional string metadata = 7;
+}
+
+message CreateAppResponse {
+  optional string response = 1;
+  optional App app = 2;
+  optional string key = 3;
+}
+
+message CreateItemRequest {
+  int32 appId = 1;
+  string key = 2;
+  Item item = 3;
+}
+
+message CreateItemResponse {
+  optional string response = 1;
+  optional Item item = 2;
+}
+
+message CreateRecipeRequest {
+  int32 appId = 1;
+  string key = 2;
+  Recipe recipe = 3;
+}
+
+message CreateRecipeResponse {
+  optional string response = 1;
+  optional Recipe recipe = 2;
+}
+
+message CreateTradeRequest {
+  int32 appId = 1;
+  string key = 2;
+  string initiator = 3;
+  string receiver = 4;
+  optional string callbackUrl = 5;
+  optional string callbackMetadata = 6;
+  optional bool public = 7;
+}
+
+message CreateTradeResponse {
+  optional string response = 1;
+  optional bool initiated = 2;
+}
+
+message CreateActionRequest {
+  int32 appId = 1;
+  string key = 2;
+  Action action = 3;
+}
+
+message CreateActionResponse {
+  optional string response = 1;
+  optional Action action = 2;
+}
+
+message GetIdentitiesRequest {
+  int32 appId = 1;
+  string key = 2;
+  string query = 3;
+}
+
+message GetIdentitiesResponse {
+  optional string response = 1;
+  repeated Identity identities = 3;
+}
+
+message GetIdentityRequest {
+  int32 appId = 1;
+  string key = 2;
+  string identityId = 3;
+}
+
+message GetIdentityResponse {
+  optional string response = 1;
+  optional Identity identity = 2;
+}
+
+message GetInventoryRequest {
+  int32 appId = 1;
+  string key = 2;
+  string identityId = 3;
+  bool available = 4;
+}
+
+message GetInventoryResponse {
+  optional string response = 1;
+  repeated Instance inventory = 2;
+}
+
+message GetItemRequest {
+  int32 appId = 1;
+  string key = 2;
+  string query = 3;
+}
+
+message GetItemResponse {
+  optional string response = 1;
+  Item item = 2;
+}
+
+message GetItemsRequest {
+  int32 appId = 1;
+  string key = 2;
+  string query = 3;
+}
+
+message GetItemsResponse {
+  optional string response = 1;
+  repeated Item items = 2;
+}
+
+message GetInstanceRequest {
+  int32 appId = 1;
+  string key = 2;
+  int32 instanceId = 3;
+}
+
+message GetInstanceResponse {
+  optional string response = 1;
+  optional Instance instance = 2;
+}
+
+message GetAppRequest {
+  int32 appId = 1;
+  string key = 2;
+  int32 optAppId = 3;
+}
+
+message GetAppResponse {
+  optional string response = 1;
+  optional App app = 2;
+}
+
+message GetTradeRequest {
+  int32 appId = 1;
+  string key = 2;
+  Trade query = 3;
+}
+
+message GetTradeResponse {
+  optional string response = 1;
+  optional Trade trade = 2;
+}
+
+message GetTradesRequest {
+  int32 appId = 1;
+  string key = 2;
+  Trade query = 3;
+}
+
+message GetTradesResponse {
+  optional string response = 1;
+  repeated Trade trades = 2;
+}
+
+message GetRecipesRequest {
+  int32 appId = 1;
+  string key = 2;
+  Recipe query = 3;
+  optional bool inclusive = 4;  // Return recipes that include at least one input/output/tool/skill in query
+}
+
+message GetRecipesResponse {
+  optional string response = 1;
+  repeated Recipe recipes = 2;
+}
+
+message GetRecipeRequest {
+  int32 appId = 1;
+  string key = 2;
+  Recipe query = 3;
+}
+
+message GetRecipeResponse {
+  optional string response = 1;
+  Recipe recipe = 2;
+}
+
+message GetActionRequest {
+  int32 appId = 1;
+  string key = 2;
+  Action query = 3;
+}
+
+message GetActionResponse {
+  optional string response = 1;
+  repeated Action actions = 2;
+}
+
+message UpdateIdentityMetadataRequest {
+  int32 appId = 1;
+  string key = 2;
+  string identityId = 3;
+  string metadata = 4;
+}
+
+message UpdateIdentityMetadataResponse {
+  optional string response = 1;
+  optional Identity identity = 2;
+}
+
+message UpdateInstanceRequest {
+  int32 appId = 1;
+  string key = 2;
+  int32 instanceId = 3;
+  Instance new = 4;
+  optional bool show = 5;
+  optional string note = 6;
+}
+
+message UpdateInstanceResponse {
+  optional string response = 1;
+  optional Instance instance = 2;
+}
+
+message UpdateItemRequest {
+  int32 appId = 1;
+  string key = 2;
+  string itemId = 3;
+  Item new = 4;
+}
+
+message UpdateItemResponse {
+  optional string response = 1;
+  optional Item item = 2;
+}
+
+message UpdateAppRequest {
+  int32 appId = 1;
+  string key = 2;
+  optional int32 optAppId = 3;
+  App new = 4;
+}
+
+message UpdateAppResponse {
+  optional string response = 1;
+  optional App app = 2;
+}
+
+message UpdateTradeRequest {
+  int32 appId = 1;
+  string key = 2;
+  int32 tradeId = 3;
+  string identityId = 4;
+  repeated Instance add = 5;
+  repeated Instance remove = 6;
+  optional string callbackUrl = 7;
+  optional string callbackMetadata = 8;
+}
+
+message UpdateTradeResponse {
+  optional string response = 1;
+  optional bool initiated = 2;
+}
+
+message UpdateRecipeRequest {
+  int32 appId = 1;
+  string key = 2;
+  int32 recipeId = 3;
+  Recipe new = 4;
+}
+
+message UpdateRecipeResponse {
+  optional string response = 1;
+  optional Recipe recipe = 2;
+}
+
+message UpdateActionRequest {
+  int32 appId = 1;
+  string key = 2;
+  int32 actionId = 3;
+  Action new = 4;
+}
+
+message UpdateActionResponse {
+  optional string response = 1;
+  optional Action action = 2;
+}
+
+message DeleteAppRequest {
+  int32 appId = 1;
+  string key = 2;
+  int32 deleteAppId = 3;
+}
+
+message DeleteAppResponse {
+  optional string response = 1;
+  optional App deletedApp = 2;
+}
+
+message DeleteInstanceRequest {
+  int32 appId = 1;
+  string key = 2;
+  int32 instanceId = 3;
+}
+
+message DeleteInstanceResponse {
+  optional string response = 1;
+  optional Instance deletedInstance = 2;
+}
+
+message DeleteTradeRequest {
+  int32 appId = 1;
+  string key = 2;
+  int32 tradeId = 3;
+}
+
+message DeleteTradeResponse {
+  optional string response = 1;
+  optional Trade deletedTrade = 2;
+}
+
+message CloseTradeRequest {
+  int32 appId = 1;
+  string key = 2;
+  int32 tradeId = 3;
+  optional bool cancel = 4;
+  optional string callbackUrl = 5;
+  optional string callbackMetadata = 6;
+}
+
+message CloseTradeResponse {
+  optional string response = 1;
+  optional bool initiated = 2;
+}
+
+message VerifyKeyRequest {
+  int32 appId = 1;
+  string key = 2;
+}
+
+message VerifyKeyResponse {
+  bool valid = 1;
+}
+
+message RunGiveRequest {
+  int32 appId = 1;
+  string key = 2;
+  string giverId = 3;
+  string receiverId = 4;
+  repeated Instance instances = 5;
+}
+
+message RunGiveResponse {
+  optional string response = 1;
+  repeated Instance instances = 2;
+}
+
+message RunCraftRequest {
+  int32 appId = 1;
+  string key = 2;
+  string identityId = 3;
+  int32 recipeId = 4;
+  optional string callbackUrl = 5;
+  optional string callbackMetadata = 6;
+}
+
+message RunCraftResponse {
+  optional string response = 1;
+  optional int32 time = 2;
+}
+
+message GetCraftStatusRequest {
+  int32 appId = 1;
+  string key = 2;
+  string identityId = 3;
+}
+
+message GetCraftStatusResponse {
+  optional string response = 1;
+  optional bool crafting = 2;
+}
+
+message MakeOfferRequest {
+  int32 appId = 1;
+  string key = 2;
+  string sourceIdentityId = 3;
+  string targetIdentityId = 4;
+  repeated OfferItem offerToGive = 5;
+  repeated OfferItem offerToReceive = 6;
+  optional string callbackUrl = 7;
+}
+
+message MakeOfferResponse {
+  optional string response = 1;
+  bool success = 2;
+}

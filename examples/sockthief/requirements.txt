@@ -1,2 +1,2 @@
-#longchain[slack, llm]
+#longchain[slack, llm, bag]
 python-dotenv

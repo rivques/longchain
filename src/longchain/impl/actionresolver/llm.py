@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import json
 from typing import Awaitable, Optional, Union, cast
 from longchain.core.actionresolver import ActionResolver
+from longchain.core.path import Path
 try:
     from openai import AsyncOpenAI
     from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
@@ -41,7 +42,7 @@ class LlmContext:
     player_actions: Sequence[PlayerAction]
 
 class OpenAIActionResolver(ActionResolver):
-    def __init__(self, openai_token, system_prompt: Union[str, Callable[[LlmContext], Awaitable[str]]], agent_actions: list[LlmTool]=[], model="gpt-4o-mini", openai_base_url=None, name=None, icon_url=None):
+    def __init__(self, openai_token, system_prompt: Union[str, Callable[[LlmContext], str], Callable[[LlmContext], Awaitable[str]]], agent_actions: list[LlmTool]=[], model="gpt-4o-mini", openai_base_url=None, name=None, icon_url=None):
         self.client = AsyncOpenAI(api_key=openai_token, base_url=openai_base_url)
         self.model = model
         self.system_prompt = system_prompt
@@ -61,7 +62,9 @@ class OpenAIActionResolver(ActionResolver):
                 raise ValueError("Assistant cannot respond twice in a row. Check that tools executed correctly and that the messager had some player actions.")
         context = LlmContext(player=player, player_actions=player_actions)
         if callable(self.system_prompt):
-            system_prompt = await self.system_prompt(context)
+            system_prompt = self.system_prompt(context)
+            if isinstance(system_prompt, Awaitable):
+                system_prompt = await system_prompt
         else:
             system_prompt = self.system_prompt
         messages: list[ChatCompletionMessageParam] = [{"role": "system", "content": system_prompt}]
