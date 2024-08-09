@@ -4,20 +4,26 @@ build-backend = "hatchling.build"
 
 [project]
 name="longchain"
-version = "0.3.0"
+version = "0.3.1"
 description="A framework for LLM-powered interactions"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
 ]
 dependencies = [
 
 ]
+keywords = ["llm", "slack", "npc", "ai", "chatbot"]
 
 [project.optional-dependencies]
 slack = ["slack_bolt", "slack_sdk", "aiohttp"]
 llm = ["openai"]
 bag = ["grpcio", "grpcio-tools"]
+
+[project.urls]
+Respository = "https://github.com/rivques/longchain"

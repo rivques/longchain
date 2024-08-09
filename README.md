@@ -26,3 +26,5 @@ python -m twine upload dist/*
 3. run `cd .\src\longchain\plugins\bag\api\`
 4. run `python -m grpc_tools.protoc -I . --grpc_python_out . --python_out . --pyi_out . bag.proto`
 5. Go to the generated bag_pb2_grpc.py and change the `bag_pb2` import to `import longchain.plugins.bag.api.bag_pb2 as bag__pb2`
+## Naming
+It's a tool for making _long chains_ of NPC interactions.
