@@ -53,7 +53,7 @@ class OpenAIActionResolver(ActionResolver):
     
     async def tick(self, player, player_actions):
         if player.current_path not in player.path_states:
-            player.path_states[player.current_path] = {"messages": self.preload_messages}
+            player.path_states[player.current_path] = {"messages": self.preload_messages.copy()}
         for action in player_actions:
             if action.name == "say":
                 player.path_states[player.current_path]["messages"].append({"role": "user", "content": action.data["message"]})

@@ -17,6 +17,7 @@ class Quest:
         print(f"{name} initialized! Paths: {', '.join([path.id for path in paths])}")
     
     async def tick(self, player: Player, player_actions: Sequence[PlayerAction]):
+        print(f"ticking for player {player.name}")
         ready_to_end = False
         messages: list[Message] = []
         error: Optional[Exception] = None

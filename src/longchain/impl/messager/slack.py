@@ -73,6 +73,9 @@ class SlackMessager(Messager):
             return
         await client.reactions_add(channel=body["event"]["channel"], name="loading-dots", timestamp=body["event"]["ts"])
         player.messager_state["last_unprocessed_message"] = float(body["event"]["ts"])
+
+        if player.current_path in player.path_states and player.path_states[player.current_path].get("messages") is not None:
+            print(f"Player {player.name} is on path {player.current_path} with {len(player.path_states[player.current_path]['messages'])} messages")
         # okay by this point we should be good to actually process the message
         # with the gurantees that this player is real, the plaayer is the one who sent
         # the message, and that we're not processing another of the same player's message already
