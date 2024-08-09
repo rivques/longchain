@@ -20,4 +20,4 @@ dependencies = [
 [project.optional-dependencies]
 slack = ["slack_bolt", "slack_sdk", "aiohttp"]
 llm = ["openai"]
-bag = ["grpcio", "grpcio_tools"]
+bag = ["grpcio", "grpcio-tools"]

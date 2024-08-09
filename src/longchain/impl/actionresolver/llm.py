@@ -42,17 +42,18 @@ class LlmContext:
     player_actions: Sequence[PlayerAction]
 
 class OpenAIActionResolver(ActionResolver):
-    def __init__(self, openai_token, system_prompt: Union[str, Callable[[LlmContext], str], Callable[[LlmContext], Awaitable[str]]], agent_actions: list[LlmTool]=[], model="gpt-4o-mini", openai_base_url=None, name=None, icon_url=None):
+    def __init__(self, openai_token, system_prompt: Union[str, Callable[[LlmContext], str], Callable[[LlmContext], Awaitable[str]]], agent_actions: list[LlmTool]=[], model="gpt-4o-mini", openai_base_url=None, name=None, icon_url=None, preload_messages: Optional[list[ChatCompletionMessageParam]]=None, max_convo_length=50):
         self.client = AsyncOpenAI(api_key=openai_token, base_url=openai_base_url)
         self.model = model
         self.system_prompt = system_prompt
         self.name = name
         self.agent_actions = agent_actions
         self.icon_url = icon_url
+        self.preload_messages = preload_messages if preload_messages is not None else []
     
     async def tick(self, player, player_actions):
         if player.current_path not in player.path_states:
-            player.path_states[player.current_path] = {"messages": []}
+            player.path_states[player.current_path] = {"messages": self.preload_messages}
         for action in player_actions:
             if action.name == "say":
                 player.path_states[player.current_path]["messages"].append({"role": "user", "content": action.data["message"]})
@@ -102,6 +103,7 @@ class OpenAIActionResolver(ActionResolver):
             player.path_states[player.current_path]["messages"].append({"role": "assistant", "content": response.choices[0].message.content})
         if response.choices[0].message.tool_calls is not None:
             for tool_call in response.choices[0].message.tool_calls:
+                player.path_states[player.current_path]["messages"].append(tool_call.to_dict(mode='json'))
                 our_tool = next((tool for tool in self.agent_actions if tool.name == tool_call.function.name), None)
                 if our_tool is None:
                     # the ai called a tool we don't have, so we'll just ignore it
