@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name="longchain"
-version = "0.3.1"
+version = "0.4.0"
 description="A framework for LLM-powered interactions"
 readme = "README.md"
 license = { file = "LICENSE" }
