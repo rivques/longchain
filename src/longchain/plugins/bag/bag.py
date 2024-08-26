@@ -2,6 +2,7 @@ try:
     import grpc
 except ImportError:
     raise ImportError("The `bag` plugin is not available when the `bag` extra is not installed.")
+from typing import Optional
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer as RCFContainer
 from longchain.plugins.bag.api import bag_pb2_grpc, bag_pb2
 
@@ -37,10 +38,10 @@ class BagManager:
         result: bag_pb2.CreateInstanceResponse = self.stub.CreateInstance(bag_pb2.CreateInstanceRequest(appId=self.app_id, key=self.key, identityId=identity_id, itemId=item_id, quantity=quantity, metadata=metadata, public=public, show=show, note=note))
         return result
     
-    def make_offer(self, target_identity_id: str, offer_to_give: RCFContainer[bag_pb2.OfferItem], offer_to_receive: RCFContainer[bag_pb2.OfferItem]) -> bag_pb2.MakeOfferResponse:
+    def make_offer(self, target_identity_id: str, offer_to_give: RCFContainer[bag_pb2.OfferItem], offer_to_receive: RCFContainer[bag_pb2.OfferItem], callback_url: Optional[str] = None) -> bag_pb2.MakeOfferResponse:
         if self.stub is None:
             raise ValueError("BagManager not configured. Call bm_instance.configure() first.")
-        result = self.stub.MakeOffer(bag_pb2.MakeOfferRequest(appId=self.app_id, key=self.key, sourceIdentityId=self.owner_id, targetIdentityId=target_identity_id, offerToGive=offer_to_give, offerToReceive=offer_to_receive))
+        result = self.stub.MakeOffer(bag_pb2.MakeOfferRequest(appId=self.app_id, key=self.key, sourceIdentityId=self.owner_id, targetIdentityId=target_identity_id, offerToGive=offer_to_give, offerToReceive=offer_to_receive, callbackUrl=callback_url))
         return result
 bag_instance = BagManager()
 
