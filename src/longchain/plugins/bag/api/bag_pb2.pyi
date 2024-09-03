@@ -886,7 +886,7 @@ class GetCraftStatusResponse(_message.Message):
     def __init__(self, response: _Optional[str] = ..., crafting: bool = ...) -> None: ...
 
 class MakeOfferRequest(_message.Message):
-    __slots__ = ("appId", "key", "sourceIdentityId", "targetIdentityId", "offerToGive", "offerToReceive", "callbackUrl")
+    __slots__ = ("appId", "key", "sourceIdentityId", "targetIdentityId", "offerToGive", "offerToReceive", "callbackUrl", "slackIdToDm")
     APPID_FIELD_NUMBER: _ClassVar[int]
     KEY_FIELD_NUMBER: _ClassVar[int]
     SOURCEIDENTITYID_FIELD_NUMBER: _ClassVar[int]
@@ -894,6 +894,7 @@ class MakeOfferRequest(_message.Message):
     OFFERTOGIVE_FIELD_NUMBER: _ClassVar[int]
     OFFERTORECEIVE_FIELD_NUMBER: _ClassVar[int]
     CALLBACKURL_FIELD_NUMBER: _ClassVar[int]
+    SLACKIDTODM_FIELD_NUMBER: _ClassVar[int]
     appId: int
     key: str
     sourceIdentityId: str
@@ -901,7 +902,8 @@ class MakeOfferRequest(_message.Message):
     offerToGive: _containers.RepeatedCompositeFieldContainer[OfferItem]
     offerToReceive: _containers.RepeatedCompositeFieldContainer[OfferItem]
     callbackUrl: str
-    def __init__(self, appId: _Optional[int] = ..., key: _Optional[str] = ..., sourceIdentityId: _Optional[str] = ..., targetIdentityId: _Optional[str] = ..., offerToGive: _Optional[_Iterable[_Union[OfferItem, _Mapping]]] = ..., offerToReceive: _Optional[_Iterable[_Union[OfferItem, _Mapping]]] = ..., callbackUrl: _Optional[str] = ...) -> None: ...
+    slackIdToDm: str
+    def __init__(self, appId: _Optional[int] = ..., key: _Optional[str] = ..., sourceIdentityId: _Optional[str] = ..., targetIdentityId: _Optional[str] = ..., offerToGive: _Optional[_Iterable[_Union[OfferItem, _Mapping]]] = ..., offerToReceive: _Optional[_Iterable[_Union[OfferItem, _Mapping]]] = ..., callbackUrl: _Optional[str] = ..., slackIdToDm: _Optional[str] = ...) -> None: ...
 
 class MakeOfferResponse(_message.Message):
     __slots__ = ("response", "success")
